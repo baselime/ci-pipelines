@@ -1,0 +1,60 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@4.1
+
+workflows:
+  version: 2
+  push-workflow:
+    jobs:
+      - plan
+      - approve_push:
+          # This prevents applying the changes without previous manual confirmation from a user
+          type: approval
+          requires:
+            - plan
+      - push:
+          # By adding "requires" we require the approval to be given before continuing
+          requires:
+            - approve_push
+      - report:
+          requires:
+            - push
+
+# Specify the jobs
+jobs:
+  plan:
+    # The Baselime container is very lightweight, so we require only smallest resource class
+    resource_class: small
+    docker:
+      - image: baselime/baselime:latest
+    steps:
+      - checkout
+      - run:
+          name: Plan
+          # Push command is interactive and asks for "y/N" input from user.add_ssh_keys:
+          # By piping the "no" to it, the changes will be only displayed but not actually applied
+          command: echo "no" | baselime push --c .baselime
+  push:
+    resource_class: small
+    docker:
+      - image: baselime/baselime:latest
+    steps:
+      - checkout
+      - run:
+          name: Push
+          # This command with flag -y will push the changes to the observability configuration without asking user for confirmation
+          command: baselime push -y --c .baselime
+
+  report:
+    # The Baselime container is very lightweight, so we require only smallest resource class
+    resource_class: small
+    docker:
+      - image: baselime/baselime:latest
+    working_directory: /tmp/workspace
+    steps:
+      - checkout
+      - run:
+          name: Produce Report
+          # Produces report of your alerts with the latest changes applied.
+          command: baselime report --c .baselime

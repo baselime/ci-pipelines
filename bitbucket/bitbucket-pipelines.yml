@@ -1,0 +1,22 @@
+image: baselime/baselime:latest
+
+pipelines:
+  default:
+    # Show the difference between remote and local configuration to see the changes to be applied
+    - step:
+        name: 'Show changes to be applied'
+        script:
+          - echo "no" | baselime push --c .baselime
+
+    # Apply the changes
+    - step:
+        name: 'Push the changes'
+        trigger: 'manual'
+        script:
+          - baselime push -y --c .baselime
+
+    # Prints report of your alerts
+    - step:
+        name: 'Print report'
+        script:
+          - baselime report --c .baselime
