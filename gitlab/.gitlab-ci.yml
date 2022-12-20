@@ -14,12 +14,14 @@ stages:
 plan:
   stage: plan
   script:
+    # Show the changes to be pushed
     - echo no | baselime push --c .baselime
 
 push:
   stage: push
   needs:
     - plan
+  # Add "manual" to require user to confirm before pushing the configuration changes
   when: manual
   allow_failure: true
   script:
@@ -30,4 +32,5 @@ report:
   needs:
     - push
   script:
+    # Produces report of your alerts with the latest changes applied.
     - baselime report --c .baselime
